@@ -16,6 +16,7 @@ type Draft = {
   body: string;
   subject: string | null;
   status: string;
+  mediaUrl?: string | null;
   campaignId: string | null;
   engagements: { likes: number; comments: number; shares: number; reach: number } | null;
   scheduledDay: string | null;

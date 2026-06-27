@@ -9,6 +9,7 @@ interface Props {
     body: string;
     subject?: string | null;
     status: string;
+    mediaUrl?: string | null;
     engagements?: { likes: number; comments: number; shares: number; reach: number } | null;
     scheduledDay?: string | null;
     scheduledTime?: string | null;
@@ -93,6 +94,17 @@ export function RedditCard({ draft, onSave, onApprove, onSchedule }: Props) {
               onClick={() => setEditingBody(true)} title="Click to edit body">
               {body}
             </p>
+          )}
+
+          {/* Image display */}
+          {draft.mediaUrl && (
+            <div style={{ marginTop: "12px", width: "100%", maxHeight: "300px", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", background: "var(--bg-subtle)" }}>
+              <img
+                src={draft.mediaUrl}
+                alt="Reddit post content"
+                style={{ width: "100%", height: "auto", maxHeight: "300px", objectFit: "contain", display: "block" }}
+              />
+            </div>
           )}
 
           {/* Post actions */}

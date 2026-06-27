@@ -23,6 +23,7 @@ export default async function SchedulePage() {
     platform: drafts.platform,
     channel: drafts.channel,
     status: drafts.status,
+    mediaUrl: drafts.mediaUrl,
     scheduledDay: drafts.scheduledDay,
     scheduledTime: drafts.scheduledTime,
   }).from(drafts)

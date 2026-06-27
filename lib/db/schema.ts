@@ -155,6 +155,7 @@ export const drafts = pgTable("drafts", {
   engagements:  jsonb("engagements").$default(() => ({ likes: 0, comments: 0, shares: 0, reach: 0 })),
   // Future image generation
   imagePrompt:  text("image_prompt"),
+  mediaUrl:     text("media_url"),
   createdAt:    timestamp("created_at").notNull().defaultNow(),
   updatedAt:    timestamp("updated_at").notNull().$onUpdate(() => new Date()),
 });

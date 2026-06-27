@@ -11,6 +11,7 @@ type Draft = {
   platform: string | null;
   channel: string;
   status: string | null;
+  mediaUrl?: string | null;
   scheduledDay: string | null;
   scheduledTime: string | null;
 };

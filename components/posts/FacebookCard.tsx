@@ -8,6 +8,7 @@ interface Props {
     id: string;
     body: string;
     status: string;
+    mediaUrl?: string | null;
     engagements?: { likes: number; comments: number; shares: number; reach: number } | null;
     scheduledDay?: string | null;
     scheduledTime?: string | null;
@@ -67,10 +68,20 @@ export function FacebookCard({ draft, onSave, onApprove, onSchedule }: Props) {
         )}
       </div>
 
-      {/* Image placeholder */}
-      <div style={{ width: "100%", height: "180px", background: "var(--bg-subtle)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px", borderTop: "1px solid var(--border)" }}>
-        <span style={{ fontSize: "28px" }}>🖼️</span>
-        <span style={{ fontSize: "11px", color: "var(--fg-faint)" }}>Image will be added</span>
+      {/* Image display */}
+      <div style={{ width: "100%", height: "200px", position: "relative", background: "var(--bg-subtle)", overflow: "hidden", borderTop: "1px solid var(--border)" }}>
+        {draft.mediaUrl ? (
+          <img
+            src={draft.mediaUrl}
+            alt="Facebook post content"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <span style={{ fontSize: "28px" }}>🖼️</span>
+            <span style={{ fontSize: "11px", color: "var(--fg-faint)" }}>Image will be added</span>
+          </div>
+        )}
       </div>
 
       {/* Reaction count */}

@@ -27,6 +27,7 @@ export default async function B2cVaultPage({ searchParams }: { searchParams: Pro
       body: drafts.body,
       subject: drafts.subject,
       status: drafts.status,
+      mediaUrl: drafts.mediaUrl,
       campaignId: drafts.campaignId,
       engagements: drafts.engagements,
       scheduledDay: drafts.scheduledDay,

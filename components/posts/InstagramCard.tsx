@@ -9,6 +9,7 @@ interface Props {
     body: string;
     subject?: string | null;
     status: string;
+    mediaUrl?: string | null;
     engagements?: { likes: number; comments: number; shares: number; reach: number } | null;
     scheduledDay?: string | null;
     scheduledTime?: string | null;
@@ -44,12 +45,20 @@ export function InstagramCard({ draft, onSave, onApprove, onSchedule }: Props) {
         <MoreHorizontal size={16} color="var(--fg-muted)" />
       </div>
 
-      {/* Image placeholder */}
+      {/* Image display */}
       <div style={{ width: "100%", paddingBottom: "100%", position: "relative", background: "var(--bg-subtle)", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-          <div style={{ fontSize: "32px" }}>🖼️</div>
-          <div style={{ fontSize: "11px", color: "var(--fg-faint)", fontWeight: "500" }}>Image will be added</div>
-        </div>
+        {draft.mediaUrl ? (
+          <img
+            src={draft.mediaUrl}
+            alt="Instagram post content"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <div style={{ fontSize: "32px" }}>🖼️</div>
+            <div style={{ fontSize: "11px", color: "var(--fg-faint)", fontWeight: "500" }}>Image will be added</div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
