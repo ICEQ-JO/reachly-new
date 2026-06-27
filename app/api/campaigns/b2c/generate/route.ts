@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { products, campaigns, drafts, agentRuns } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { generateContent } from "@/lib/ai";
+import { searchPexelsImages } from "@/lib/pexels";
 
 const PHOTO_POOL = [
   {
@@ -153,12 +154,21 @@ export async function POST(request: Request) {
       )
     );
 
+    // Pull a pool of real, relevant images from Pexels based on the product.
+    // Falls back to the Unsplash placeholder pool when Pexels is unavailable.
+    const imageQuery = [product.niche, product.offering, product.name]
+      .filter(Boolean).join(" ").trim();
+    const pexelsPool = await searchPexelsImages(imageQuery || "lifestyle brand", tasks.length + 4);
+
     const toInsert: typeof drafts.$inferInsert[] = [];
 
     results.forEach((result, idx) => {
       const task = tasks[idx];
       const platform = task.platform;
       if (result.status === "fulfilled") {
+        const mediaUrl = pexelsPool.length > 0
+          ? pexelsPool[idx % pexelsPool.length]
+          : getMockImageForProduct(product, idx);
         toInsert.push({
           productId: product.id,
           campaignId: campaign.id,
@@ -167,7 +177,7 @@ export async function POST(request: Request) {
           body: result.value.body,
           subject: result.value.subject ?? null,
           status: "draft",
-          mediaUrl: getMockImageForProduct(product, idx),
+          mediaUrl,
           engagements: { likes: 0, comments: 0, shares: 0, reach: 0 },
         });
       }

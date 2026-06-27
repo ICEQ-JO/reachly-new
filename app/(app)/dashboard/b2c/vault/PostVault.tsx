@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { InstagramCard } from "@/components/posts/InstagramCard";
 import { FacebookCard } from "@/components/posts/FacebookCard";
 import { RedditCard } from "@/components/posts/RedditCard";
-import { Globe, MessageCircle, Filter, Heart, Eye, Share2, MessageSquare, TrendingUp, Flame } from "lucide-react";
+import { Globe, MessageCircle, Filter, Heart, Eye, Share2, MessageSquare, Flame, CheckCheck, CalendarClock } from "lucide-react";
 import { Instagram } from "@/components/icons/Instagram";
 import { toast } from "sonner";
 
@@ -46,6 +46,10 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 const STATUS_OPTIONS = ["all", "draft", "approved", "scheduled", "sent"];
 const PLATFORM_OPTIONS = ["all", "instagram", "facebook", "reddit"];
+
+// Slots used to spread posts when scheduling them all at once (match the calendar grid).
+const SCHED_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const SCHED_TIMES = ["8am", "10am", "12pm", "2pm", "4pm", "6pm", "8pm"];
 
 export function PostVault({ drafts: initialDrafts, campaigns, selectedCampaign }: Props) {
   const router = useRouter();
@@ -88,6 +92,51 @@ export function PostVault({ drafts: initialDrafts, campaigns, selectedCampaign }
     router.push(`/dashboard/b2c/schedule?scheduleDraftId=${id}`);
   }
 
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function handleApproveAll() {
+    const targets = filtered.filter((d) => d.status === "draft");
+    if (targets.length === 0) { toast.error("No draft posts to approve."); return; }
+    setBulkBusy(true);
+    const done = new Set<string>();
+    for (const d of targets) {
+      const res = await fetch(`/api/drafts/${d.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "approved" }),
+      });
+      if (res.ok) done.add(d.id);
+    }
+    setDrafts((prev) => prev.map((d) => done.has(d.id) ? { ...d, status: "approved" } : d));
+    setBulkBusy(false);
+    toast.success(`Approved ${done.size} post${done.size !== 1 ? "s" : ""}!`);
+  }
+
+  async function handleScheduleAll() {
+    const targets = filtered.filter((d) => ["draft", "approved"].includes(d.status) && !d.scheduledDay);
+    if (targets.length === 0) { toast.error("No posts left to schedule."); return; }
+    setBulkBusy(true);
+    const updates: Record<string, { day: string; time: string }> = {};
+    for (let i = 0; i < targets.length; i++) {
+      const d = targets[i];
+      const day = SCHED_DAYS[i % SCHED_DAYS.length];
+      const time = SCHED_TIMES[Math.floor(i / SCHED_DAYS.length) % SCHED_TIMES.length];
+      const res = await fetch(`/api/drafts/${d.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "scheduled", scheduledDay: day, scheduledTime: time }),
+      });
+      if (res.ok) updates[d.id] = { day, time };
+    }
+    setDrafts((prev) => prev.map((d) => updates[d.id]
+      ? { ...d, status: "scheduled", scheduledDay: updates[d.id].day, scheduledTime: updates[d.id].time }
+      : d));
+    setBulkBusy(false);
+    const n = Object.keys(updates).length;
+    toast.success(`Scheduled ${n} post${n !== 1 ? "s" : ""} — view them in the calendar.`);
+  }
+
+  const approvableCount = filtered.filter((d) => d.status === "draft").length;
+  const schedulableCount = filtered.filter((d) => ["draft", "approved"].includes(d.status) && !d.scheduledDay).length;
+
   // Engagement totals
   const totalReach = filtered.reduce((s, d) => s + (d.engagements?.reach ?? 0), 0);
   const totalLikes = filtered.reduce((s, d) => s + (d.engagements?.likes ?? 0), 0);
@@ -105,9 +154,23 @@ export function PostVault({ drafts: initialDrafts, campaigns, selectedCampaign }
   return (
     <div style={{ padding: "28px 32px", maxWidth: "1200px", margin: "0 auto" }}>
       {/* Header */}
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontSize: "20px", fontWeight: "700", color: "var(--fg)", marginBottom: "4px" }}>Post Vault</h1>
-        <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>All your generated posts — edit, approve, and schedule from here.</p>
+      <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "16px", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ fontSize: "20px", fontWeight: "700", color: "var(--fg)", marginBottom: "4px" }}>Post Vault</h1>
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>All your generated posts — edit, approve, and schedule from here.</p>
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={handleApproveAll} disabled={bulkBusy || approvableCount === 0}
+            className="btn btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: "600", opacity: bulkBusy || approvableCount === 0 ? 0.5 : 1, cursor: bulkBusy || approvableCount === 0 ? "default" : "pointer" }}>
+            <CheckCheck size={15} /> Approve all{approvableCount > 0 ? ` (${approvableCount})` : ""}
+          </button>
+          <button onClick={handleScheduleAll} disabled={bulkBusy || schedulableCount === 0}
+            className="btn btn-primary"
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: "600", opacity: bulkBusy || schedulableCount === 0 ? 0.5 : 1, cursor: bulkBusy || schedulableCount === 0 ? "default" : "pointer" }}>
+            <CalendarClock size={15} /> Schedule all{schedulableCount > 0 ? ` (${schedulableCount})` : ""}
+          </button>
+        </div>
       </div>
 
       {/* Engagement KPIs */}
